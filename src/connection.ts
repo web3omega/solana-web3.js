@@ -143,6 +143,10 @@ type StatefulSubscription = Readonly<
       serverSubscriptionId: ServerSubscriptionId;
       state: 'unsubscribed';
     }
+  // Errored subscriptions. To avoid endless loop
+  | {
+    state: 'errored';
+  }
 >;
 /**
  * A type that encapsulates a subscription's RPC method
@@ -5949,6 +5953,10 @@ export class Connection {
           return;
         }
         switch (subscription.state) {
+          case 'errored':
+            // Callbacks might still be active, but we need to remove it to avoid crashing of the application
+            delete this._subscriptionsByHash[hash];
+            break;
           case 'pending':
           case 'unsubscribed':
             if (subscription.callbacks.size === 0) {
@@ -6006,7 +6014,7 @@ export class Connection {
                 // TODO: Maybe add an 'errored' state or a retry limit?
                 this._setSubscription(hash, {
                   ...subscription,
-                  state: 'pending',
+                  state: 'errored',
                 });
                 await this._updateSubscriptions();
               }
