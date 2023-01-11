@@ -5955,6 +5955,7 @@ export class Connection {
         switch (subscription.state) {
           case 'errored':
             // Callbacks might still be active, but we need to remove it to avoid crashing of the application
+            console.log('Deleting errored state');
             delete this._subscriptionsByHash[hash];
             break;
           case 'pending':
@@ -6008,6 +6009,11 @@ export class Connection {
                     e.message,
                   );
                 }
+                console.log('Add errored state');
+                this._setSubscription(hash, {
+                  ...subscription,
+                  state: 'errored',
+                });
                 if (!isCurrentConnectionStillActive()) {
                   return;
                 }
